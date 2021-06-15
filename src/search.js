@@ -1,54 +1,76 @@
-import React, { Component} from 'react';
-import Book from './book.js'
+import React, { Component } from "react";
+import Book from "./book.js";
+import * as BooksAPI from "./BooksAPI";
+import { Link } from "react-router-dom";
 
-class Search extends Component 
-{
+class Search extends Component {
+  state = {
+    books: [],
+    searchQuery: "",
+  };
 
-    state = {
-        searchQuery : ''
-    }
+  search = (query) => {
+    BooksAPI.search(query)
+      .then((books) => {
+        for (const shelf in this.props.shelfs) {
+          this.props.shelfs[shelf].forEach((book) => {
+            books.find((b) => b.id === book.id).shelf = shelf;
+          });
+        }
+        return books;
+      })
+      .then((books) => {
+        this.setState({
+          books: books,
+          searchQuery: query.trim(),
+        });
+      });
+  };
 
-    search = (query) => {
-        console.log(query);
-        this.setState({searchQuery: query.trim()});
-        this.props.search(query)
-    }
+  changeBookStatus = (book, status) => {
+    this.props.changeBookStatus(book, status).then((book) => {
+      const bookInPrevState = this.state.books.find((b) => b.id === book.id);
+      const bookIndex = this.state.books.indexOf(bookInPrevState);
+      this.setState((prevState) => {
+        prevState.books.splice(bookIndex, 1, book);
+        return { books: prevState.books };
+      });
+    });
+  };
 
-    render () {
-        return ( 
-            <div className="search-books">
-            <div className="search-books-bar">
-              <button className="close-search" onClick={() => {}}>Close</button>
-              <div className="search-books-input-wrapper">
-                {/*
-                  NOTES: The search from BooksAPI is limited to a particular set of search terms.
-                  You can find these search terms here:
-                  https://github.com/udacity/reactnd-project-myreads-starter/blob/master/SEARCH_TERMS.md
-
-                  However, remember that the BooksAPI.search method DOES search by title or author. So, don't worry if
-                  you don't find a specific author or title. Every search is limited by search terms.
-                */}
-                <input 
-                    type="text" 
-                    placeholder="Search by title or author" 
-                    onChange={(e) => this.search(e.target.value)}
-                    value={this.state.searchQuery}
-                    />
-
-              </div>
-            </div>
-            <div className="search-books-results">
-              <ol className="books-grid">
-                  {this.props.books && Array.isArray(this.props.books) && (
-                      this.props.books.map((book) => (
-                    <Book key={book.id} book={book}/>
-                  )))}
-                
-              </ol>
-            </div>
+  render() {
+    return (
+      <div className="search-books">
+        <div className="search-books-bar">
+          <Link to="/">
+            <button className="close-search"> Close </button>
+          </Link>
+          <div className="search-books-input-wrapper">
+            <input
+              type="text"
+              placeholder="Search by title or author"
+              onChange={(e) => this.search(e.target.value)}
+              value={this.state.searchQuery}
+            />
           </div>
-        )
-    }
+        </div>
+        <div className="search-books-results">
+          <ol className="books-grid">
+            {this.state.books &&
+              Array.isArray(this.state.books) &&
+              this.state.books.map((book) => (
+                <Book
+                  key={book.id}
+                  book={book}
+                  changeBookStatus={this.changeBookStatus}
+                  shelf={book.shelf}
+                />
+              ))}
+          </ol>
+        </div>
+      </div>
+    );
+  }
 }
 
-export default Search
+export default Search;
