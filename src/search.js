@@ -10,19 +10,24 @@ class Search extends Component {
   };
 
   search = (query) => {
+    this.setState({
+      searchQuery: query.trim(),
+    });
     BooksAPI.search(query)
       .then((books) => {
-        for (const shelf in this.props.shelfs) {
-          this.props.shelfs[shelf].forEach((book) => {
-            books.find((b) => b.id === book.id).shelf = shelf;
-          });
+        if (Array.isArray(books)) {
+          for (const shelf in this.props.shelfs) {
+            this.props.shelfs[shelf].forEach((book) => {
+              const bookShownInSearch = books.find((b) => b.id === book.id);
+              if (bookShownInSearch) bookShownInSearch.shelf = shelf;
+            });
+          }
         }
         return books;
       })
       .then((books) => {
         this.setState({
           books: books,
-          searchQuery: query.trim(),
         });
       });
   };

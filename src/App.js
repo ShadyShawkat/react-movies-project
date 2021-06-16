@@ -14,23 +14,44 @@ class BooksApp extends React.Component {
     },
   };
 
-  // componentDidMount() {
-  //   BooksAPI.search('e')
-  //     .then((books) => {
-  //       console.log(books)
-  //       // this.setState(() => ({
-  //       //   contacts
-  //       // }))
-  //     })
-  // }
+  componentDidMount() {
+    BooksAPI.getAll("e").then((books) => {
+      this.setState({
+        shelfs: {
+          currentlyReading: books.filter((b) => b.shelf === "currentlyReading"),
+          read: books.filter((b) => b.shelf === "read"),
+          wantToRead: books.filter((b) => b.shelf === "wantToRead"),
+        },
+      });
+    });
+    // console.log(this.state);
+  }
 
   changeBookStatus = (book, shelf) => {
     // console.log('book', book);
-    // console.log('shelf', typeof shelf);
+    // console.log('shelf', shelf);
 
     return new Promise((resolve) => {
+      const oldShelf = book.shelf || null;
       BooksAPI.update(book, shelf);
       book.shelf = shelf;
+
+      this.setState((prevState) => {
+        if (oldShelf) {
+          const bookOnOldShelf = prevState.shelfs[oldShelf].find(
+            (b) => b.id === book.id
+          );
+          const bookIndexOnOldShelf = prevState.shelfs[oldShelf].indexOf(
+            bookOnOldShelf
+          );
+          prevState.shelfs[oldShelf].splice(bookIndexOnOldShelf, 1);
+        }
+        if (shelf !== "none" || oldShelf === "none") {
+          prevState.shelfs[shelf].push(book);
+          return prevState;
+        }
+      });
+
       resolve(book);
     });
   };
@@ -42,7 +63,6 @@ class BooksApp extends React.Component {
           <Route
             path="/search"
             render={() => (
-              // <Search search={this.search} books={this.state.books} changeBookStatus={this.changeBookStatus}/>
               <Search
                 changeBookStatus={this.changeBookStatus}
                 shelfs={this.state.shelfs}
@@ -63,6 +83,7 @@ class BooksApp extends React.Component {
                       const books = this.state.shelfs[shelfName];
                       return (
                         <BookShelf
+                          key={shelfName}
                           shelf={{ shelfName: shelfName, books: books }}
                           changeBookStatus={this.changeBookStatus}
                         />
