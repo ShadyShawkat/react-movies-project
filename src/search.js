@@ -11,7 +11,7 @@ class Search extends Component {
 
   search = (query) => {
     this.setState({
-      searchQuery: query.trim(),
+      searchQuery: query,
     });
     BooksAPI.search(query)
       .then((books) => {
@@ -27,7 +27,7 @@ class Search extends Component {
       })
       .then((books) => {
         this.setState({
-          books: books,
+          books: books.filter(book => book.imageLinks)
         });
       });
   };
